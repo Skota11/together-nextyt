@@ -29,7 +29,7 @@ export function Chat({username}: {username?: string}) {
           break;
         }
         default: {
-          console.error('Unhandled event', event);
+          break;
         }
       }
     }

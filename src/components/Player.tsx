@@ -38,9 +38,7 @@ export function Player({roomId , isHost}: {roomId: string , isHost: boolean}) {
         if(message.data.seek !== undefined && playerRef.current){
             if(message.clientId === ably.auth.clientId) return;
             const currentTime = playerRef.current.currentTime;
-            console.log(currentTime)
             if(Math.abs(currentTime - message.data.seek) > 1){
-                console.log(message.data.seek)
                 // シーク処理
                 playerRef.current.currentTime = message.data.seek;
             }
@@ -67,7 +65,6 @@ export function Player({roomId , isHost}: {roomId: string , isHost: boolean}) {
     
     useEffect(() => {
         const handleUserInteraction = () => {
-            console.log("User interaction detected");
             setHasInteracted(true);
             // インタラクションがあればモーダルは不要
             setShowAutoplayModal(false);
