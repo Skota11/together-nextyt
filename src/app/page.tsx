@@ -30,7 +30,8 @@ export default function RoomPage() {
                 </div>
             </div>
             <div className="">
-                <h1 className="text-xl font-bold">部屋に参加する</h1>
+                <h1 className="text-xl font-bold my-2">部屋に参加する</h1>
+                <p>部屋主またはその部屋のメンバーから共有リンクを受け取ってください</p>
             </div>
         </div>
     )
