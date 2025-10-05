@@ -9,6 +9,7 @@ import { ChatClient } from "@ably/chat"
 import { ChatClientProvider} from "@ably/chat/react"
 import { useEffect, useState } from "react";
 import { Search } from "@/components/Search";
+import { Button } from "@heroui/button";
 
 
 export default function RoomPage({ roomId , username }: { roomId: string  , username: string}) {
@@ -94,15 +95,21 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
                     <div className="space-y-4">
                         <ConnectionState roomId={roomId} />
                         <div className="md:flex md:space-x-4">
-                            <div className="md:static fixed bottom-4 left-0 right-0 px-4 md:px-0 md:w-1/3">
+                            <div className="md:static fixed bottom-4 left-0 right-0 px-4 md:px-0 md:w-1/3 z-50">
                                 <AccordionMenu roomId={roomId} username={username}/>
                             </div>
                             <div className="md:flex-auto">
                                 <div className="">
                                     <Player roomId={roomId} isHost={isHost}/>
-                                    {isHost && (
-                                        <Search roomId={roomId} />
-                                    )}
+                                    <div className="mt-4 flex justify-end gap-x-2">
+                                        {isHost && (
+                                                <Search roomId={roomId} />
+                                        )}
+                                        <Button onClick={() => {
+                                                    navigator.clipboard.writeText(`${window.location.origin}/room/${roomId}`);
+                                                    alert("URLをコピーしました");
+                                                }}>共有する</Button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

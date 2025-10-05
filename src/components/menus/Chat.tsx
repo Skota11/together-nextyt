@@ -43,7 +43,7 @@ export function Chat({username}: {username?: string}) {
   };
 
   return (
-  <div className="flex flex-col w-full h-[300px] item-left overflow-hidden mx-auto">
+  <div className="flex flex-col w-full h-[300px] item-left overflow-hidden mx-auto z-50">
     <div className="flex-1 p-4 overflow-y-auto space-y-2">
       {messages.map((msg: Message) => {
         const data = new Date(msg.timestamp).toLocaleTimeString();
