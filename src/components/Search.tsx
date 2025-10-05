@@ -21,9 +21,6 @@ export function Search({roomId}: {roomId: string}) {
         <>
         <Button onPress={onOpen}>検索して動画を探す</Button>
         <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="4xl" placement="bottom-center" scrollBehavior="outside">
-            <ModalHeader>
-                検索
-            </ModalHeader>
             <ModalContent>
                         <div className="flex place-content-center sm:pt-4 pt-12 w-full">
                           <div className="flex gap-x-2 w-[400px]">

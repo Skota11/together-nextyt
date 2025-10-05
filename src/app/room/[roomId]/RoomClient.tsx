@@ -10,6 +10,7 @@ import { ChatClientProvider} from "@ably/chat/react"
 import { useEffect, useState } from "react";
 import { Search } from "@/components/Search";
 import { Button } from "@heroui/button";
+import { Shere } from "@/components/menus/Share";
 
 
 export default function RoomPage({ roomId , username }: { roomId: string  , username: string}) {
@@ -105,10 +106,7 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
                                         {isHost && (
                                                 <Search roomId={roomId} />
                                         )}
-                                        <Button onClick={() => {
-                                                    navigator.clipboard.writeText(`${window.location.origin}/room/${roomId}`);
-                                                    alert("URLをコピーしました");
-                                                }}>共有する</Button>
+                                        <Shere roomId={roomId} />
                                     </div>
                                 </div>
                             </div>
