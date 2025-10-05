@@ -81,7 +81,7 @@ export function Player({roomId , isHost}: {roomId: string , isHost: boolean}) {
     
     return (
         <div className="">
-            <AutoPlayPopup handleEnableAutoplay={handleEnableAutoplay} showAutoplayModal={showAutoplayModal} setShowAutoplayModal={setShowAutoplayModal}/>
+            <AutoPlayPopup setHasInteracted={setHasInteracted} handleEnableAutoplay={handleEnableAutoplay} showAutoplayModal={showAutoplayModal} setShowAutoplayModal={setShowAutoplayModal}/>
             <div className='aspect-video w-full shadow-lg rounded-xl overflow-hidden'>
                 {ytid === "" && (
                     <div className='flex justify-center items-center h-full bg-black text-white'>

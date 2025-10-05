@@ -1,11 +1,11 @@
 import { Button } from '@heroui/button'
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/modal'
 
-export function AutoPlayPopup({showAutoplayModal , setShowAutoplayModal , handleEnableAutoplay}: {showAutoplayModal: boolean , setShowAutoplayModal: (value: boolean) => void , handleEnableAutoplay: () => void}) {
+export function AutoPlayPopup({showAutoplayModal , setShowAutoplayModal , handleEnableAutoplay , setHasInteracted}: {showAutoplayModal: boolean , setShowAutoplayModal: (value: boolean) => void , handleEnableAutoplay: () => void , setHasInteracted: (value: boolean) => void}) {
     return (
         <Modal 
             isOpen={showAutoplayModal} 
-            onClose={() => setShowAutoplayModal(false)}
+            onClose={() => {setShowAutoplayModal(false); setHasInteracted(true);}}
             placement="center"
         >
                 <ModalContent>
