@@ -18,6 +18,6 @@ export function VideoInfo ({ytid}: {ytid?: string}) {
         f()
     } , [ytid])
     return (
-        <h1 className="text-lg font-bold my-4 truncate">{info?.title}</h1>
+        <h1 className="text-lg font-bold my-4">{info?.title}</h1>
     )
 }
