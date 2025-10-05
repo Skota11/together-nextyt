@@ -93,7 +93,7 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
         <AblyProvider client={realtimeClient}>
             <ChatClientProvider client={chatClient!}>
                 <ChannelProvider channelName={`room:${roomId}`}>
-                    <div className="space-y-4">
+                    <div className="space-y-4 mb-8">
                         <ConnectionState roomId={roomId} />
                         <div className="md:flex md:space-x-4">
                             <div className="md:static fixed bottom-4 left-0 right-0 px-4 md:px-0 md:w-1/3 z-50">
