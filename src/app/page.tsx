@@ -1,5 +1,6 @@
 "use client";
 
+import { HomeNavigation } from "@/components/Navigation";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { useRef } from "react";
@@ -8,7 +9,7 @@ export default function RoomPage() {
     const inputRef = useRef<HTMLInputElement>(null);
     return (
         <div className="flex flex-col gap-8">
-            <h1 className="text-xl">NextTube Together</h1>
+            <HomeNavigation />
             <div className="">
                 <h1 className="text-xl font-bold my-2">部屋を作成する</h1>
                 <p>部屋名を決めて、共有します。</p>
