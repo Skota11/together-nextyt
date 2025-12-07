@@ -25,16 +25,13 @@ export async function GET(req: NextRequest) {
         const hasHost = presencePage.items.some(member => member.data?.isHost === true);
 
         if (!hasHost) {
-            // 部屋主がいない場合、clientIdでソートして最初のメンバーと比較
+            // 部屋主がいない場合、入室時刻でソートして最も早いメンバーを部屋主にする
             const sortedMembers = [...presencePage.items].sort((a, b) =>
-                (a.clientId || '').localeCompare(b.clientId || '')
+                (a.timestamp || 0) - (b.timestamp || 0)
             );
 
-            // 現在のclientIdと全メンバー（現在のclientIdも含む）を比較
-            const allClientIds = [...sortedMembers.map(m => m.clientId || ''), clientId].sort();
-
-            // 最初のclientIdが現在のリクエストのclientIdなら部屋主
-            if (allClientIds[0] === clientId) {
+            // 最も早く入室したメンバーのclientIdと比較
+            if (sortedMembers.length > 0 && sortedMembers[0].clientId === clientId) {
                 isHost = true;
             }
         }
