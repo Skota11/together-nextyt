@@ -21,10 +21,34 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
     useEffect(() => {
         const initAbly = async () => {
             const baseAuthUrl = `${window.location.origin}/api/ably-auth?roomId=${roomId}`;
+            
+            // localStorageからclientIdを取得または生成
+            const storageKey = `ably-client-id-${encodeURIComponent(roomId)}`;
+            let persistedClientId: string | null = null;
+            
+            try {
+                persistedClientId = localStorage.getItem(storageKey);
+            } catch (error) {
+                console.warn('localStorage not available:', error);
+            }
+            
             // トークンとisHost情報を取得
-            const response = await fetch(baseAuthUrl);
+            const authUrl = persistedClientId 
+                ? `${baseAuthUrl}&clientId=${encodeURIComponent(persistedClientId)}`
+                : baseAuthUrl;
+            const response = await fetch(authUrl);
             const authData = await response.json();
             const initialClientId = authData.clientId;
+            
+            // clientIdをlocalStorageに保存
+            if (!persistedClientId) {
+                try {
+                    localStorage.setItem(storageKey, initialClientId);
+                } catch (error) {
+                    console.warn('Failed to save clientId to localStorage:', error);
+                }
+            }
+            
             const isHost = authData.isHost;
             setIsHost(isHost);
             
@@ -33,7 +57,7 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
                     console.log(tokenParams)
                     try {
                         // 常に同じclientIdを使用
-                        const authUrl = `${baseAuthUrl}&clientId=${initialClientId}`;
+                        const authUrl = `${baseAuthUrl}&clientId=${encodeURIComponent(initialClientId)}`;
                         const response = await fetch(authUrl);
                         const tokenRequest = await response.json();
                         callback(null, tokenRequest);
@@ -49,32 +73,39 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
             
             const channel = client.channels.get(`room:${roomId}`);
             
+            // 入室時刻を記録
+            const joinedAt = Date.now();
+            
             // プレゼンス変更の監視を設定
             channel.presence.subscribe('leave', async (member) => {
                 
-                // 退出したメンバーが部屋主だった場合、トークンを再取得
+                // 退出したメンバーが部屋主だった場合、新しい部屋主を決定
                 if (member.data?.isHost) {                    
                     try {
-                        // authCallbackを再トリガーしてトークンを更新
-                        // これにより同じclientIdで新しい権限のトークンが取得される
-                        await client.auth.authorize();                    
+                        // presence更新の反映を待つ（サーバー側での処理時間を考慮）
+                        const PRESENCE_UPDATE_DELAY_MS = 100;
+                        await new Promise(resolve => setTimeout(resolve, PRESENCE_UPDATE_DELAY_MS));
+                        
                         // 新しい権限を確認するためにAPIを呼び出し
-                        const authUrl = `${baseAuthUrl}&clientId=${initialClientId}`;
+                        const authUrl = `${baseAuthUrl}&clientId=${encodeURIComponent(initialClientId)}`;
                         const newTokenResponse = await fetch(authUrl);
                         const newTokenData = await newTokenResponse.json();
                         
                         // isHostステートを更新
                         setIsHost(newTokenData.isHost);
                         
+                        // authCallbackを再トリガーしてトークンを更新
+                        await client.auth.authorize();
+                        
                         // プレゼンス情報を更新
-                        await channel.presence.update({ userName: username, isHost: newTokenData.isHost });
+                        await channel.presence.update({ userName: username, isHost: newTokenData.isHost, joinedAt: joinedAt });
                     } catch (error) {
                         console.error('Error updating presence after host leave:', error);
                     }
                 }
             });
             
-            await channel.presence.enter({ userName: username, isHost: isHost });
+            await channel.presence.enter({ userName: username, isHost: isHost, joinedAt: joinedAt });
         };
         
         initAbly();
