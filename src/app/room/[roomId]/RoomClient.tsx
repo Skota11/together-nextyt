@@ -57,7 +57,7 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
                     console.log(tokenParams)
                     try {
                         // 常に同じclientIdを使用
-                        const authUrl = `${baseAuthUrl}&clientId=${initialClientId}`;
+                        const authUrl = `${baseAuthUrl}&clientId=${encodeURIComponent(initialClientId)}`;
                         const response = await fetch(authUrl);
                         const tokenRequest = await response.json();
                         callback(null, tokenRequest);
@@ -83,7 +83,7 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
                         // これにより同じclientIdで新しい権限のトークンが取得される
                         await client.auth.authorize();                    
                         // 新しい権限を確認するためにAPIを呼び出し
-                        const authUrl = `${baseAuthUrl}&clientId=${initialClientId}`;
+                        const authUrl = `${baseAuthUrl}&clientId=${encodeURIComponent(initialClientId)}`;
                         const newTokenResponse = await fetch(authUrl);
                         const newTokenData = await newTokenResponse.json();
                         
