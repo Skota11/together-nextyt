@@ -73,6 +73,9 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
             
             const channel = client.channels.get(`room:${roomId}`);
             
+            // 入室時刻を記録
+            const joinedAt = Date.now();
+            
             // プレゼンス変更の監視を設定
             channel.presence.subscribe('leave', async (member) => {
                 
@@ -91,14 +94,14 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
                         setIsHost(newTokenData.isHost);
                         
                         // プレゼンス情報を更新
-                        await channel.presence.update({ userName: username, isHost: newTokenData.isHost });
+                        await channel.presence.update({ userName: username, isHost: newTokenData.isHost, joinedAt: joinedAt });
                     } catch (error) {
                         console.error('Error updating presence after host leave:', error);
                     }
                 }
             });
             
-            await channel.presence.enter({ userName: username, isHost: isHost });
+            await channel.presence.enter({ userName: username, isHost: isHost, joinedAt: joinedAt });
         };
         
         initAbly();

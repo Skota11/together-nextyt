@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
         if (!hasHost) {
             // 部屋主がいない場合、入室時刻でソートして最も早いメンバーを部屋主にする
             const sortedMembers = [...presencePage.items].sort((a, b) =>
-                (a.timestamp || 0) - (b.timestamp || 0)
+                (a.data?.joinedAt || 0) - (b.data?.joinedAt || 0)
             );
 
             // 最も早く入室したメンバーのclientIdと比較
