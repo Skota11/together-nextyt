@@ -82,8 +82,9 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
                 // 退出したメンバーが部屋主だった場合、新しい部屋主を決定
                 if (member.data?.isHost) {                    
                     try {
-                        // 少し待ってから新しい部屋主を決定（presence更新の反映を待つ）
-                        await new Promise(resolve => setTimeout(resolve, 100));
+                        // presence更新の反映を待つ（サーバー側での処理時間を考慮）
+                        const PRESENCE_UPDATE_DELAY_MS = 100;
+                        await new Promise(resolve => setTimeout(resolve, PRESENCE_UPDATE_DELAY_MS));
                         
                         // 新しい権限を確認するためにAPIを呼び出し
                         const authUrl = `${baseAuthUrl}&clientId=${encodeURIComponent(initialClientId)}`;
