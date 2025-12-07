@@ -79,12 +79,12 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
             // プレゼンス変更の監視を設定
             channel.presence.subscribe('leave', async (member) => {
                 
-                // 退出したメンバーが部屋主だった場合、トークンを再取得
+                // 退出したメンバーが部屋主だった場合、新しい部屋主を決定
                 if (member.data?.isHost) {                    
                     try {
-                        // authCallbackを再トリガーしてトークンを更新
-                        // これにより同じclientIdで新しい権限のトークンが取得される
-                        await client.auth.authorize();                    
+                        // 少し待ってから新しい部屋主を決定（presence更新の反映を待つ）
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        
                         // 新しい権限を確認するためにAPIを呼び出し
                         const authUrl = `${baseAuthUrl}&clientId=${encodeURIComponent(initialClientId)}`;
                         const newTokenResponse = await fetch(authUrl);
@@ -92,6 +92,9 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
                         
                         // isHostステートを更新
                         setIsHost(newTokenData.isHost);
+                        
+                        // authCallbackを再トリガーしてトークンを更新
+                        await client.auth.authorize();
                         
                         // プレゼンス情報を更新
                         await channel.presence.update({ userName: username, isHost: newTokenData.isHost, joinedAt: joinedAt });

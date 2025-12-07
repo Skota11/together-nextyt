@@ -26,9 +26,12 @@ export async function GET(req: NextRequest) {
 
         if (!hasHost) {
             // 部屋主がいない場合、入室時刻でソートして最も早いメンバーを部屋主にする
-            const sortedMembers = [...presencePage.items].sort((a, b) =>
-                (a.data?.joinedAt || 0) - (b.data?.joinedAt || 0)
-            );
+            // 入室時刻が同じ場合はclientIdで決定
+            const sortedMembers = [...presencePage.items].sort((a, b) => {
+                const timeDiff = (a.data?.joinedAt || 0) - (b.data?.joinedAt || 0);
+                if (timeDiff !== 0) return timeDiff;
+                return (a.clientId || '').localeCompare(b.clientId || '');
+            });
 
             // 最も早く入室したメンバーのclientIdと比較
             if (sortedMembers.length > 0 && sortedMembers[0].clientId === clientId) {
