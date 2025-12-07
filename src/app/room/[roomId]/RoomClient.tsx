@@ -21,10 +21,24 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
     useEffect(() => {
         const initAbly = async () => {
             const baseAuthUrl = `${window.location.origin}/api/ably-auth?roomId=${roomId}`;
+            
+            // localStorageからclientIdを取得または生成
+            const storageKey = `ably-client-id-${roomId}`;
+            const persistedClientId = localStorage.getItem(storageKey);
+            
             // トークンとisHost情報を取得
-            const response = await fetch(baseAuthUrl);
+            const authUrl = persistedClientId 
+                ? `${baseAuthUrl}&clientId=${persistedClientId}`
+                : baseAuthUrl;
+            const response = await fetch(authUrl);
             const authData = await response.json();
             const initialClientId = authData.clientId;
+            
+            // clientIdをlocalStorageに保存
+            if (!persistedClientId) {
+                localStorage.setItem(storageKey, initialClientId);
+            }
+            
             const isHost = authData.isHost;
             setIsHost(isHost);
             
