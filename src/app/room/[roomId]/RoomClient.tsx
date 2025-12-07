@@ -23,12 +23,18 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
             const baseAuthUrl = `${window.location.origin}/api/ably-auth?roomId=${roomId}`;
             
             // localStorageからclientIdを取得または生成
-            const storageKey = `ably-client-id-${roomId}`;
-            const persistedClientId = localStorage.getItem(storageKey);
+            const storageKey = `ably-client-id-${encodeURIComponent(roomId)}`;
+            let persistedClientId: string | null = null;
+            
+            try {
+                persistedClientId = localStorage.getItem(storageKey);
+            } catch (error) {
+                console.warn('localStorage not available:', error);
+            }
             
             // トークンとisHost情報を取得
             const authUrl = persistedClientId 
-                ? `${baseAuthUrl}&clientId=${persistedClientId}`
+                ? `${baseAuthUrl}&clientId=${encodeURIComponent(persistedClientId)}`
                 : baseAuthUrl;
             const response = await fetch(authUrl);
             const authData = await response.json();
@@ -36,7 +42,11 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
             
             // clientIdをlocalStorageに保存
             if (!persistedClientId) {
-                localStorage.setItem(storageKey, initialClientId);
+                try {
+                    localStorage.setItem(storageKey, initialClientId);
+                } catch (error) {
+                    console.warn('Failed to save clientId to localStorage:', error);
+                }
             }
             
             const isHost = authData.isHost;
