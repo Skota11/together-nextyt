@@ -5,7 +5,6 @@ import { useAbly } from 'ably/react'
 import { AutoPlayPopup } from './player/AutoPlayPopup'
 import { VideoInfo } from './player/VideoInfo'
 
-//TODO : ISHOSTじゃなければ全てのプレイヤーの操作を受け付けない
 export function Player({roomId , isHost}: {roomId: string , isHost: boolean}) {
     const ably = useAbly();
     const [ytid , setYtid] = useState<string >("")
@@ -101,14 +100,20 @@ export function Player({roomId , isHost}: {roomId: string , isHost: boolean}) {
                                 setShowAutoplayModal(true);
                             }
                             setPlaying(true)
-                            publish(`room:${roomId}` , { ytid, playing: true , seek: e.currentTarget.currentTime })
+                            if (isHost) {
+                                publish(`room:${roomId}` , { ytid, playing: true , seek: e.currentTarget.currentTime })
+                            }
                     }}
                     onPause={async (e) => {
                             setPlaying(false)
-                            publish(`room:${roomId}`, { ytid, playing: false , seek: e.currentTarget.currentTime })
+                            if (isHost) {
+                                publish(`room:${roomId}`, { ytid, playing: false , seek: e.currentTarget.currentTime })
+                            }
                     }}
                     onSeeked={async (e) => {
-                            publish(`room:${roomId}`, { ytid, playing, seek: e.currentTarget.currentTime })
+                            if (isHost) {
+                                publish(`room:${roomId}`, { ytid, playing, seek: e.currentTarget.currentTime })
+                            }
                     }}
                 />
                 )}
