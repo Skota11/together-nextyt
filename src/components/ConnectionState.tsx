@@ -5,9 +5,9 @@ import { useAbly, useConnectionStateListener } from 'ably/react';
 import { useState } from 'react';
 import { Chip } from '@heroui/chip';
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faDoorOpen} from "@fortawesome/free-solid-svg-icons";
+import {faDoorOpen, faCrown} from "@fortawesome/free-solid-svg-icons";
 
-export function ConnectionState({roomId}: {roomId?: string}) {
+export function ConnectionState({roomId, isHost}: {roomId?: string, isHost?: boolean}) {
   const ably = useAbly();
   const [connectionState, setConnectionState] = useState(ably.connection.state);
 
@@ -25,6 +25,15 @@ export function ConnectionState({roomId}: {roomId?: string}) {
             connectionState === 'connected' ? 'success' : 'warning'}>
             {connectionState}
         </Chip>
+        {isHost && (
+          <Chip 
+            startContent={<FontAwesomeIcon icon={faCrown} className="text-yellow-500" />}
+            variant='flat' 
+            color='warning'
+          >
+            Host
+          </Chip>
+        )}
     </div>
   );
 }

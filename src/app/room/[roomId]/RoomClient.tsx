@@ -3,39 +3,53 @@
 import { AccordionMenu } from "@/components/AccordionMenu";
 import { ConnectionState } from "@/components/ConnectionState";
 import { Player } from "@/components/Player";
-import Ably from "ably";
+import Ably, { RealtimeChannel } from "ably";
 import { AblyProvider , ChannelProvider } from "ably/react"
 import { ChatClient } from "@ably/chat"
 import { ChatClientProvider} from "@ably/chat/react"
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Search } from "@/components/Search";
-import { Button } from "@heroui/button";
 import { Shere } from "@/components/menus/Share";
-
 
 export default function RoomPage({ roomId , username }: { roomId: string  , username: string}) {
     const [realtimeClient, setRealtimeClient] = useState<Ably.Realtime | null>(null);
     const [chatClient, setChatClient] = useState<ChatClient | null>(null);
-    const [isHost , setIsHost] = useState<boolean>(false);
+    const [isHost, setIsHost] = useState<boolean>(false);
+    const clientIdRef = useRef<string>('');
+    const isReauthorizingRef = useRef<boolean>(false);
+    const isHostRef = useRef<boolean>(false);
+
+    // isHostRefを同期
+    useEffect(() => {
+        isHostRef.current = isHost;
+    }, [isHost]);
 
     useEffect(() => {
+        let client: Ably.Realtime | null = null;
+        let channel: RealtimeChannel | null = null;
+        
         const initAbly = async () => {
             const baseAuthUrl = `${window.location.origin}/api/ably-auth?roomId=${roomId}`;
-            // トークンとisHost情報を取得
+            
+            // 初回トークン取得
             const response = await fetch(baseAuthUrl);
             const authData = await response.json();
             const initialClientId = authData.clientId;
-            const isHost = authData.isHost;
-            setIsHost(isHost);
+            clientIdRef.current = initialClientId;
+            setIsHost(authData.isHost);
+            isHostRef.current = authData.isHost;
             
-            const client = new Ably.Realtime({ 
+            client = new Ably.Realtime({ 
                 authCallback: async (tokenParams, callback) => {
-                    console.log(tokenParams)
                     try {
-                        // 常に同じclientIdを使用
                         const authUrl = `${baseAuthUrl}&clientId=${initialClientId}`;
                         const response = await fetch(authUrl);
                         const tokenRequest = await response.json();
+                        
+                        // サーバーが決定したisHost状態を反映
+                        setIsHost(tokenRequest.isHost);
+                        isHostRef.current = tokenRequest.isHost;
+                        
                         callback(null, tokenRequest);
                     } catch (error) {
                         callback(error instanceof Error ? error.message : String(error), null);
@@ -43,58 +57,77 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
                 }
             });
             
-            const chatClient = new ChatClient(client);
+            const chatClientInstance = new ChatClient(client);
             setRealtimeClient(client);
-            setChatClient(chatClient);
+            setChatClient(chatClientInstance);
             
-            const channel = client.channels.get(`room:${roomId}`);
+            channel = client.channels.get(`room:${roomId}`);
             
-            // プレゼンス変更の監視を設定
+            // Hostが抜けた時の処理
             channel.presence.subscribe('leave', async (member) => {
+                // 退出したのがHostでなければ何もしない
+                if (!member.data?.isHost) return;
                 
-                // 退出したメンバーが部屋主だった場合、トークンを再取得
-                if (member.data?.isHost) {                    
+                // 自分が既にHostなら何もしない
+                if (isHostRef.current) return;
+                
+                // 再認可中なら何もしない
+                if (isReauthorizingRef.current) return;
+                
+                // サーバーに問い合わせて新Hostを決定してもらう
+                // 少し待ってからリクエスト（プレゼンスリストの更新を待つ）
+                isReauthorizingRef.current = true;
+                
+                setTimeout(async () => {
                     try {
-                        // authCallbackを再トリガーしてトークンを更新
-                        // これにより同じclientIdで新しい権限のトークンが取得される
-                        await client.auth.authorize();                    
-                        // 新しい権限を確認するためにAPIを呼び出し
-                        const authUrl = `${baseAuthUrl}&clientId=${initialClientId}`;
-                        const newTokenResponse = await fetch(authUrl);
-                        const newTokenData = await newTokenResponse.json();
+                        if (!client) return;
                         
-                        // isHostステートを更新
-                        setIsHost(newTokenData.isHost);
+                        // トークンを再取得（サーバーがHost決定）
+                        await client.auth.authorize();
                         
-                        // プレゼンス情報を更新
-                        await channel.presence.update({ userName: username, isHost: newTokenData.isHost });
+                        // 新しいHost状態でプレゼンスを更新
+                        if (channel && isHostRef.current) {
+                            await channel.presence.update({ userName: username, isHost: true });
+                        }
                     } catch (error) {
-                        console.error('Error updating presence after host leave:', error);
+                        console.error('Error during host handover:', error);
+                    } finally {
+                        isReauthorizingRef.current = false;
                     }
-                }
+                }, 500);
             });
             
-            await channel.presence.enter({ userName: username, isHost: isHost });
+            // 自分自身を入室させる
+            await channel.presence.enter({ userName: username, isHost: authData.isHost });
         };
         
         initAbly();
         
         return () => {
-            if (realtimeClient) {
-                realtimeClient.close();
+            if (client) {
+                client.close();
             }
         };
     }, [roomId, username]);
 
+    // isHost変更時にプレゼンス情報を更新
+    useEffect(() => {
+        if (realtimeClient && clientIdRef.current) {
+            const channel = realtimeClient.channels.get(`room:${roomId}`);
+            channel.presence.update({ userName: username, isHost }).catch(console.error);
+        }
+    }, [isHost, realtimeClient, roomId, username]);
+
     if (!realtimeClient) {
         return <div className="">Connecting to Ably...</div>;
     }
+    
     return (
         <AblyProvider client={realtimeClient}>
             <ChatClientProvider client={chatClient!}>
                 <ChannelProvider channelName={`room:${roomId}`}>
                     <div className="space-y-4 mb-8">
-                        <ConnectionState roomId={roomId} />
+                        <ConnectionState roomId={roomId} isHost={isHost} />
                         <div className="md:flex md:space-x-4">
                             <div className="md:static fixed bottom-4 left-0 right-0 px-4 md:px-0 md:w-1/3 z-50">
                                 <AccordionMenu roomId={roomId} username={username}/>
@@ -104,7 +137,7 @@ export default function RoomPage({ roomId , username }: { roomId: string  , user
                                     <Player roomId={roomId} isHost={isHost}/>
                                     <div className="mt-4 flex justify-end gap-x-2">
                                         {isHost && (
-                                                <Search roomId={roomId} />
+                                            <Search roomId={roomId} />
                                         )}
                                         <Shere roomId={roomId} />
                                     </div>
